@@ -1,3 +1,7 @@
+-- made by samet (joestar._3 on discord)
+-- https://discord.gg/VhvTd5HV8d
+-- example at bottom
+
 if getgenv().Library then
     getgenv().Library:Unload()
 end
@@ -499,7 +503,12 @@ local Library do
                 writefile(Data.Id, game:HttpGet(Data.Url))
             end
 
-            local Data = {
+            local FontFolder = Library.Folders.Directory .. "/Fonts"
+            if not isfolder(FontFolder) then
+                makefolder(FontFolder)
+            end
+
+            local FontData = {
                 name = Name,
                 faces = {
                     {
@@ -511,14 +520,17 @@ local Library do
                 }
             }
 
-            writefile(`{Library.Folders.Fonts}/{Name}.font`, HttpService:JSONEncode(Data))
-            return Font.new(getcustomasset(`{Library.Folders.Fonts}/{Name}.font`), Enum.FontWeight.Regular, Enum.FontStyle.Normal)
+            writefile(`{FontFolder}/{Name}.font`, HttpService:JSONEncode(FontData))
+            return Font.new(getcustomasset(`{FontFolder}/{Name}.font`), Enum.FontWeight.Regular, Enum.FontStyle.Normal)
         end
 
-        Library.Font = CustomFont:New("InterSemiBold", "Regular", "Normal", {
-            Id = "Inter",
-            Url = "https://github.com/sametexe001/luas/raw/refs/heads/main/fonts/InterSemibold.ttf"
-        })
+        pcall(function()
+            Library.Font = CustomFont:New("InterSemiBold", "Regular", "Normal", {
+                Id = ".Paradise/Fonts/Inter.ttf",
+                Url = "https://github.com/sametexe001/luas/raw/refs/heads/main/fonts/InterSemibold.ttf"
+            })
+        end)
+        Library.Font = Library.Font or Font.new(Enum.FontFamily.GothamMedium)
     end
 
     Library.Holder = Instances:Create("ScreenGui", {
@@ -751,29 +763,18 @@ local Library do
     end
 
     Library.RefreshConfigsList = function(self, Element)
-        local CurrentList = { }
         local List = { }
 
         local ConfigFolderName = StringGSub(Library.Folders.Configs, Library.Folders.Directory .. "/", "")
 
-        for Index, Value in listfiles(Library.Folders.Configs) do
-            local FileName = StringGSub(Value, Library.Folders.Directory .. "\\" .. ConfigFolderName .. "\\", "")
-            List[Index] = FileName
-        end
-
-        local IsNew = #List ~= CurrentList
-
-        if not IsNew then
-            for Index = 1, #List do
-                if List[Index] ~= CurrentList[Index] then
-                    IsNew = true
-                    break
-                end
+        if isfolder(Library.Folders.Configs) then
+            for Index, Value in listfiles(Library.Folders.Configs) do
+                local FileName = StringGSub(Value, Library.Folders.Directory .. "\\" .. ConfigFolderName .. "\\", "")
+                table.insert(List, FileName)
             end
-        else
-            CurrentList = List
-            Element:Refresh(CurrentList)
         end
+
+        Element:Refresh(List)
     end
 
     Library.ChangeItemTheme = function(self, Item, Properties)
