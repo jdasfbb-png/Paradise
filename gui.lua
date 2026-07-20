@@ -3835,7 +3835,11 @@ local Library do
                     Items = { }, 
                     Multi = false,
                     Callback = function(Value)
-                        ConfigSelected = ConfigsList.ConfigFileMap and ConfigsList.ConfigFileMap[Value] or Value
+                        if ConfigsList and ConfigsList.ConfigFileMap and ConfigsList.ConfigFileMap[Value] then
+                            ConfigSelected = ConfigsList.ConfigFileMap[Value]
+                        else
+                            ConfigSelected = Value
+                        end
                     end
                 })
 
@@ -3865,7 +3869,11 @@ local Library do
                     Name = "Delete", 
                     Callback = function()
                     if ConfigSelected then
-                        Library:DeleteConfig(ConfigSelected)
+                        local FileToDelete = ConfigSelected
+                        if not isfile(Library.Folders.Configs .. "/" .. FileToDelete) then
+                            FileToDelete = FileToDelete .. ".Paradise"
+                        end
+                        Library:DeleteConfig(FileToDelete)
                         Library:RefreshConfigsList(ConfigsList)
                     end
                 end})
@@ -3874,7 +3882,13 @@ local Library do
                     Name = "Load", 
                     Callback = function()
                     if ConfigSelected then
-                        Library:LoadConfig(readfile(Library.Folders.Configs .. "/" .. ConfigSelected))
+                        local FileToLoad = ConfigSelected
+                        if not isfile(Library.Folders.Configs .. "/" .. FileToLoad) then
+                            FileToLoad = FileToLoad .. ".Paradise"
+                        end
+                        if isfile(Library.Folders.Configs .. "/" .. FileToLoad) then
+                            Library:LoadConfig(readfile(Library.Folders.Configs .. "/" .. FileToLoad))
+                        end
                     end
                 end})
 
