@@ -1847,7 +1847,7 @@ local Library do
 
             local Window = {
                 Name = Data.Name or Data.name or "Window",
-                SubTitle = Data.SubTitle or Data.subtitle or "for "..(pcall(function() return game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId).Name end) and game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId).Name or "Unknown"),
+                SubTitle = Data.SubTitle or Data.subtitle or (function() local ok, name = pcall(function() return game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId).Name end) if ok and name then return "for " .. name:gsub("%[.-%]", ""):match("^%s*(.-)%s*$") else return "for Unknown" end end)(),
                 ExpiresIn = Data.ExpiresIn or Data.expiresin or "infinite days",
                 
                 Pages = { },
