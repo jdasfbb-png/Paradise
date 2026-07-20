@@ -728,13 +728,17 @@ local Library do
         local List = { }
 
         local ConfigFolderName = StringGSub(Library.Folders.Configs, Library.Folders.Directory .. "/", "")
+        local ConfigFileMap = { }
 
         for Index, Value in listfiles(Library.Folders.Configs) do
             local FileName = StringGSub(Value, Library.Folders.Directory .. "\\" .. ConfigFolderName .. "\\", "")
-            List[Index] = FileName
+            local DisplayName = StringGSub(FileName, "%.Paradise$", "")
+
+            ConfigFileMap[DisplayName] = FileName
+            List[Index] = DisplayName
         end
 
-        local IsNew = #List ~= CurrentList
+        local IsNew = #List ~= #CurrentList
 
         if not IsNew then
             for Index = 1, #List do
@@ -743,9 +747,14 @@ local Library do
                     break
                 end
             end
-        else
+        end
+
+        if IsNew then
             CurrentList = List
-            Element:Refresh(CurrentList)
+            if Element then
+                Element.ConfigFileMap = ConfigFileMap
+                Element:Refresh(CurrentList)
+            end
         end
     end
 
@@ -3826,7 +3835,7 @@ local Library do
                     Items = { }, 
                     Multi = false,
                     Callback = function(Value)
-                        ConfigSelected = Value
+                        ConfigSelected = ConfigsList.ConfigFileMap and ConfigsList.ConfigFileMap[Value] or Value
                     end
                 })
 
