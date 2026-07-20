@@ -1,7 +1,3 @@
--- made by samet (joestar._3 on discord)
--- https://discord.gg/VhvTd5HV8d
--- example at bottom
-
 if getgenv().Library then
     getgenv().Library:Unload()
 end
@@ -67,9 +63,9 @@ local Library do
         FadeSpeed = 0.2,
 
         Folders = {
-            Directory = ".Paradise",
-            Configs = ".Paradise/Configs",
-            Assets = ".Paradise/Assets",
+            Directory = "Paradise",
+            Configs = "Paradise/Configs",
+            Assets = "Paradise/Assets",
         },
 
         -- Ignore below
@@ -503,12 +499,7 @@ local Library do
                 writefile(Data.Id, game:HttpGet(Data.Url))
             end
 
-            local FontFolder = Library.Folders.Directory .. "/Fonts"
-            if not isfolder(FontFolder) then
-                makefolder(FontFolder)
-            end
-
-            local FontData = {
+            local Data = {
                 name = Name,
                 faces = {
                     {
@@ -520,17 +511,14 @@ local Library do
                 }
             }
 
-            writefile(`{FontFolder}/{Name}.font`, HttpService:JSONEncode(FontData))
-            return Font.new(getcustomasset(`{FontFolder}/{Name}.font`), Enum.FontWeight.Regular, Enum.FontStyle.Normal)
+            writefile(`{Library.Folders.Fonts}/{Name}.font`, HttpService:JSONEncode(Data))
+            return Font.new(getcustomasset(`{Library.Folders.Fonts}/{Name}.font`), Enum.FontWeight.Regular, Enum.FontStyle.Normal)
         end
 
-        pcall(function()
-            Library.Font = CustomFont:New("InterSemiBold", "Regular", "Normal", {
-                Id = ".Paradise/Fonts/Inter.ttf",
-                Url = "https://github.com/sametexe001/luas/raw/refs/heads/main/fonts/InterSemibold.ttf"
-            })
-        end)
-        Library.Font = Library.Font or Font.new(Enum.FontFamily.GothamMedium)
+        Library.Font = CustomFont:New("InterSemiBold", "Regular", "Normal", {
+            Id = "Inter",
+            Url = "https://github.com/sametexe001/luas/raw/refs/heads/main/fonts/InterSemibold.ttf"
+        })
     end
 
     Library.Holder = Instances:Create("ScreenGui", {
@@ -705,35 +693,8 @@ local Library do
         return HttpService:JSONEncode(Config)
     end
 
-    Library.EncodeConfig = function(self, Config)
-        local Encoded = { }
-        for I = 1, #Config do
-            local Byte = Config:byte(I)
-            Encoded[#Encoded + 1] = string.char(math.floor(Byte / 128) + 1)
-            Encoded[#Encoded + 1] = string.char((Byte % 128) + 1)
-        end
-        return table.concat(Encoded)
-    end
-
-    Library.DecodeConfig = function(self, Encoded)
-        if #Encoded % 2 ~= 0 then
-            return Encoded
-        end
-
-        local Decoded = { }
-        for I = 1, #Encoded, 2 do
-            local High = Encoded:byte(I) - 1
-            local Low = Encoded:byte(I + 1) - 1
-            if High < 0 or High > 127 or Low < 0 or Low > 127 then
-                return Encoded
-            end
-            Decoded[#Decoded + 1] = string.char(High * 128 + Low)
-        end
-        return table.concat(Decoded)
-    end
-
     Library.LoadConfig = function(self, Config)
-        local Decoded = HttpService:JSONDecode(self:DecodeConfig(Config))
+        local Decoded = HttpService:JSONDecode(Config)
 
         local Success, Result = Library:SafeCall(function()
             for Index, Value in Decoded do 
@@ -763,18 +724,29 @@ local Library do
     end
 
     Library.RefreshConfigsList = function(self, Element)
+        local CurrentList = { }
         local List = { }
 
         local ConfigFolderName = StringGSub(Library.Folders.Configs, Library.Folders.Directory .. "/", "")
 
-        if isfolder(Library.Folders.Configs) then
-            for Index, Value in listfiles(Library.Folders.Configs) do
-                local FileName = StringGSub(Value, Library.Folders.Directory .. "\\" .. ConfigFolderName .. "\\", "")
-                table.insert(List, FileName)
-            end
+        for Index, Value in listfiles(Library.Folders.Configs) do
+            local FileName = StringGSub(Value, Library.Folders.Directory .. "\\" .. ConfigFolderName .. "\\", "")
+            List[Index] = FileName
         end
 
-        Element:Refresh(List)
+        local IsNew = #List ~= CurrentList
+
+        if not IsNew then
+            for Index = 1, #List do
+                if List[Index] ~= CurrentList[Index] then
+                    IsNew = true
+                    break
+                end
+            end
+        else
+            CurrentList = List
+            Element:Refresh(CurrentList)
+        end
     end
 
     Library.ChangeItemTheme = function(self, Item, Properties)
@@ -1875,7 +1847,7 @@ local Library do
 
             local Window = {
                 Name = Data.Name or Data.name or "Window",
-                SubTitle = Data.SubTitle or Data.subtitle or "for "..Game:GetService("MarketplaceService"):GetProductInfo(PlaceId).Name,
+                SubTitle = Data.SubTitle or Data.subtitle or "for "..(pcall(function() return game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId).Name end) and game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId).Name or "Unknown"),
                 ExpiresIn = Data.ExpiresIn or Data.expiresin or "infinite days",
                 
                 Pages = { },
@@ -3869,7 +3841,16 @@ local Library do
 
                 ConfigsSection:Button({
                     Name = "Create",
-                    Callback = function() if ConfigName and ConfigName ~= "" and not isfile(Library.Folders.Configs .. "/" .. ConfigName .. ".Paradise") then writefile(Library.Folders.Configs .. "/" .. ConfigName .. ".Paradise", Library:EncodeConfig(Library:GetConfig())); Library:RefreshConfigsList(ConfigsList) end end})
+                    Callback = function()
+                    if ConfigName and ConfigName ~= "" then
+                        if not isfile(Library.Folders.Configs .. "/" .. ConfigName .. ".Paradise") then
+                            writefile(Library.Folders.Configs .. "/" .. ConfigName .. ".Paradise", Library:GetConfig())
+                            Library:RefreshConfigsList(ConfigsList)
+                        else
+                            return
+                        end
+                    end
+                end})
 
                 ConfigsSection:Button({
                     Name = "Delete", 
@@ -3882,11 +3863,20 @@ local Library do
 
                 ConfigsSection:Button({
                     Name = "Load", 
-                    Callback = function() if ConfigSelected then Library:LoadConfig(readfile(Library.Folders.Configs .. "/" .. ConfigSelected)) end end})
+                    Callback = function()
+                    if ConfigSelected then
+                        Library:LoadConfig(readfile(Library.Folders.Configs .. "/" .. ConfigSelected))
+                    end
+                end})
 
                 ConfigsSection:Button({
                     Name = "Save", 
-                    Callback = function() if ConfigName and ConfigName ~= "" then writefile(Library.Folders.Configs .. "/" .. ConfigName .. ".Paradise", Library:EncodeConfig(Library:GetConfig())); Library:RefreshConfigsList(ConfigsList) end end})
+                    Callback = function()
+                    if ConfigName and ConfigName ~= "" then
+                        writefile(Library.Folders.Configs .. "/" .. ConfigName .. ".Paradise", Library:GetConfig())
+                        Library:RefreshConfigsList(ConfigsList)
+                    end
+                end})
 
                 ConfigsSection:Button({
                     Name = "Refresh", 
