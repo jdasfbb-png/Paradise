@@ -2744,8 +2744,22 @@ local Library do
             }
 
             local Items = { } do
+                local ParentColumn
+
+                if Section.Page.ColumnsData then
+                    ParentColumn = Section.Page.ColumnsData[Section.Side]
+                end
+
+                if not ParentColumn and Section.Page.Items then
+                    ParentColumn = Section.Page.Items["Columns"]
+                end
+
+                if not ParentColumn then
+                    error("GUI Section parent is not initialized")
+                end
+
                 Items["Section"] = Instances:Create("Frame", {
-                    Parent = Section.Page.ColumnsData[Section.Side].Instance,
+                    Parent = ParentColumn.Instance,
                     Name = "\0",
                     Size = UDim2New(1, 0, 0, 25),
                     BorderColor3 = FromRGB(0, 0, 0),
