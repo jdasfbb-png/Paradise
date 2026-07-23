@@ -1,5 +1,8 @@
-if getgenv().Library then
-    return
+local PreviousLibrary = getgenv().Library
+if PreviousLibrary and PreviousLibrary.Unload then
+    pcall(function()
+        PreviousLibrary:Unload()
+    end)
 end
 
 local Library do 
@@ -865,6 +868,7 @@ local Library do
             local SetFunction = Library.SetFlags[Flag]
 
             if not SetFunction then
+                warn("Flag is not registered: " .. Flag)
                 continue
             end
 
@@ -873,18 +877,16 @@ local Library do
                     SetFunction(Value)
                 elseif type(Value) == "table" and Value.Color then
                     SetFunction(Value.Color, Value.Alpha)
-                elseif type(Value) == "table" then
-                    SetFunction(Value)
                 else
                     SetFunction(Value)
                 end
             end)
 
-            if SetSuccess then
+            if SetSuccess and Library.Flags[Flag] ~= nil then
                 Applied = Applied + 1
             else
                 Failed = Failed + 1
-                warn(SetError)
+                warn(SetError or ("Could not apply flag: " .. Flag))
             end
         end
 
