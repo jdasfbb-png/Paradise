@@ -1,5 +1,5 @@
 if getgenv().Library then
-    getgenv().Library:Unload()
+    return
 end
 
 local Library do 
@@ -44,6 +44,8 @@ local Library do
     local StringGSub = string.gsub
     local StringLen = string.len
     local StringSub = string.sub
+    local StringByte = string.byte
+    local StringChar = string.char
 
     local InstanceNew = Instance.new
 
@@ -619,6 +621,117 @@ local Library do
         return Success
     end
 
+    local Base64Alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+
+    local function Base64Encode(Data)
+        local Result = { }
+
+        for Index = 1, StringLen(Data), 3 do
+            local A = StringByte(Data, Index) or 0
+            local B = StringByte(Data, Index + 1) or 0
+            local C = StringByte(Data, Index + 2) or 0
+            local Value = A * 65536 + B * 256 + C
+
+            local First = math.floor(Value / 262144) % 64 + 1
+            local Second = math.floor(Value / 4096) % 64 + 1
+            local Third = math.floor(Value / 64) % 64 + 1
+            local Fourth = Value % 64 + 1
+
+            local Output = StringSub(Base64Alphabet, First, First)
+                .. StringSub(Base64Alphabet, Second, Second)
+
+            if Index + 1 <= StringLen(Data) then
+                Output = Output .. StringSub(Base64Alphabet, Third, Third)
+            else
+                Output = Output .. "="
+            end
+
+            if Index + 2 <= StringLen(Data) then
+                Output = Output .. StringSub(Base64Alphabet, Fourth, Fourth)
+            else
+                Output = Output .. "="
+            end
+
+            TableInsert(Result, Output)
+        end
+
+        return TableConcat(Result)
+    end
+
+    local function Base64Decode(Data)
+        Data = StringGSub(Data, "%s", "")
+
+        local Result = { }
+        local Length = StringLen(Data)
+
+        for Index = 1, Length, 4 do
+            local A = StringSub(Data, Index, Index)
+            local B = StringSub(Data, Index + 1, Index + 1)
+            local C = StringSub(Data, Index + 2, Index + 2)
+            local D = StringSub(Data, Index + 3, Index + 3)
+            local AIndex = StringFind(Base64Alphabet, A, 1, true)
+            local BIndex = StringFind(Base64Alphabet, B, 1, true)
+            local CIndex = C == "=" and 0 or StringFind(Base64Alphabet, C, 1, true)
+            local DIndex = D == "=" and 0 or StringFind(Base64Alphabet, D, 1, true)
+
+            if not AIndex or not BIndex or (C ~= "=" and not CIndex) or (D ~= "=" and not DIndex) then
+                return nil
+            end
+
+            local CValue = C == "=" and 0 or CIndex - 1
+            local DValue = D == "=" and 0 or DIndex - 1
+            local Value = (AIndex - 1) * 262144
+                + (BIndex - 1) * 4096
+                + CValue * 64
+                + DValue
+
+            TableInsert(Result, StringChar(math.floor(Value / 65536) % 256))
+
+            if C ~= "=" then
+                TableInsert(Result, StringChar(math.floor(Value / 256) % 256))
+            end
+
+            if D ~= "=" then
+                TableInsert(Result, StringChar(Value % 256))
+            end
+        end
+
+        return TableConcat(Result)
+    end
+
+    local function HexEscape(Data)
+        return StringGSub(Data, ".", function(Character)
+            return StringFormat("\\x%02X", StringByte(Character))
+        end)
+    end
+
+    local function HexUnescape(Data)
+        return StringGSub(Data, "\\x(%x%x)", function(Value)
+            return StringChar(tonumber(Value, 16))
+        end)
+    end
+
+    local function EncodeConfig(Data)
+        return HexEscape("P1:" .. Base64Encode(Data))
+    end
+
+    local function DecodeConfig(Data)
+        local Unescaped = HexUnescape(Data)
+
+        if StringSub(Unescaped, 1, 3) == "P1:" then
+            local Decoded = Base64Decode(StringSub(Unescaped, 4))
+            if Decoded then
+                return Decoded
+            end
+        end
+
+        return Data
+    end
+
+    local function NormalizeConfigPath(Path)
+        return StringGSub(Path, "\\", "/")
+    end
+
     Library.Connect = function(self, Event, Callback, Name)
         Name = Name or StringFormat("connection_number_%s_%s", self.UnnamedConnections + 1, HttpService:GenerateGUID(false))
 
@@ -690,11 +803,11 @@ local Library do
             end
         end)
 
-        return HttpService:JSONEncode(Config)
+        return EncodeConfig(HttpService:JSONEncode(Config))
     end
 
     Library.LoadConfig = function(self, Config)
-        local Decoded = HttpService:JSONDecode(Config)
+        local Decoded = HttpService:JSONDecode(DecodeConfig(Config))
 
         local Success, Result = Library:SafeCall(function()
             for Index, Value in Decoded do 
@@ -727,15 +840,17 @@ local Library do
         local CurrentList = { }
         local List = { }
 
-        local ConfigFolderName = StringGSub(Library.Folders.Configs, Library.Folders.Directory .. "/", "")
         local ConfigFileMap = { }
 
         for Index, Value in listfiles(Library.Folders.Configs) do
-            local FileName = StringGSub(Value, Library.Folders.Directory .. "\\" .. ConfigFolderName .. "\\", "")
-            local DisplayName = StringGSub(FileName, "%.Paradise$", "")
+            local FileName = NormalizeConfigPath(Value)
+            FileName = StringGSub(FileName, "^.*/", "")
 
-            ConfigFileMap[DisplayName] = FileName
-            List[Index] = DisplayName
+            if StringSub(FileName, -9) == ".Paradise" then
+                local DisplayName = StringSub(FileName, 1, -10)
+                ConfigFileMap[DisplayName] = FileName
+                TableInsert(List, DisplayName)
+            end
         end
 
         local IsNew = #List ~= #CurrentList
