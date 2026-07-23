@@ -872,22 +872,16 @@ local Library do
                 continue
             end
 
-            local SetSuccess, SetError = pcall(function()
+            task.spawn(function()
                 if type(Value) == "table" and Value.Key then
-                    SetFunction(Value)
+                    Library:SafeCall(SetFunction, Value)
                 elseif type(Value) == "table" and Value.Color then
-                    SetFunction(Value.Color, Value.Alpha)
+                    Library:SafeCall(SetFunction, Value.Color, Value.Alpha)
                 else
-                    SetFunction(Value)
+                    Library:SafeCall(SetFunction, Value)
                 end
             end)
-
-            if SetSuccess and Library.Flags[Flag] ~= nil then
-                Applied = Applied + 1
-            else
-                Failed = Failed + 1
-                warn(SetError or ("Could not apply flag: " .. Flag))
-            end
+            Applied = Applied + 1
         end
 
         return Failed == 0, Applied
@@ -2978,11 +2972,17 @@ local Library do
                 Toggle.Value = Value 
                 Library.Flags[Toggle.Flag] = Value 
 
-                if Toggle.Value then 
+                if Toggle.Value then
+                    Items["Inline"].Instance.BackgroundTransparency = 0
+                    Items["CheckImage"].Instance.ImageTransparency = 0
+                    Items["Text"].Instance.TextColor3 = FromRGB(255, 255, 255)
                     Items["Inline"]:Tween(nil,  {BackgroundTransparency = 0})
                     Items["CheckImage"]:Tween(nil, {ImageTransparency = 0})
                     Items["Text"]:Tween(nil, {TextColor3 = FromRGB(255, 255, 255)})
                 else
+                    Items["Inline"].Instance.BackgroundTransparency = 1
+                    Items["CheckImage"].Instance.ImageTransparency = 1
+                    Items["Text"].Instance.TextColor3 = FromRGB(100, 100, 100)
                     Items["Inline"]:Tween(nil,  {BackgroundTransparency = 1})
                     Items["CheckImage"]:Tween(nil, {ImageTransparency = 1})
                     Items["Text"]:Tween(nil, {TextColor3 = FromRGB(100, 100, 100)})
@@ -3267,8 +3267,8 @@ local Library do
                 Slider.Value = Library:Round(MathClamp(Value, Slider.Min, Slider.Max), Slider.Decimals)
                 Library.Flags[Slider.Flag] = Slider.Value
 
-                Items["Accent"]:Tween(TweenInfo.new(0.35, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {Size = UDim2New((Slider.Value - Slider.Min) / (Slider.Max - Slider.Min), -2, 1, 0)})
                 Items["Value"].Instance.Text = StringFormat("%s%s", Slider.Value, Slider.Suffix)
+                Items["Accent"]:Tween(TweenInfo.new(0.35, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {Size = UDim2New((Slider.Value - Slider.Min) / (Slider.Max - Slider.Min), -2, 1, 0)})
 
                 if Slider.Callback then
                     Library:SafeCall(Slider.Callback, Slider.Value)
