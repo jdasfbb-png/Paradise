@@ -712,7 +712,7 @@ local Library do
     end
 
     local function EncodeConfig(Data)
-        return HexEscape("P1:" .. Base64Encode(Data))
+        return HexEscape(Base64Encode(Data))
     end
 
     local function DecodeConfig(Data)
@@ -725,11 +725,27 @@ local Library do
             end
         end
 
-        return Data
+        local Decoded = Base64Decode(Unescaped)
+        return Decoded or Data
     end
 
     local function NormalizeConfigPath(Path)
         return StringGSub(Path, "\\", "/")
+    end
+
+    local function GetConfigPath(Name)
+        if not Name or Name == "" then
+            return
+        end
+
+        Name = NormalizeConfigPath(Name)
+        Name = StringGSub(Name, "^.*/", "")
+
+        if StringSub(Name, -9) ~= ".Paradise" then
+            Name = Name .. ".Paradise"
+        end
+
+        return Library.Folders.Configs .. "/" .. Name
     end
 
     Library.Connect = function(self, Event, Callback, Name)
@@ -791,48 +807,94 @@ local Library do
     Library.GetConfig = function(self)
         local Config = { } 
 
-        local Success, Result = Library:SafeCall(function()
-            for Index, Value in Library.Flags do 
+        for Index, Value in Library.Flags do
+            if type(Index) == "string" and Value ~= nil then
                 if type(Value) == "table" and Value.Key then
-                    Config[Index] = {Key = tostring(Value.Key), Mode = Value.Mode}
+                    Config[Index] = {
+                        Key = tostring(Value.Key),
+                        Mode = Value.Mode,
+                        Toggled = Value.Toggled
+                    }
                 elseif type(Value) == "table" and Value.Color then
-                    Config[Index] = {Color = "#" .. Value.HexValue, Alpha = Value.Alpha}
+                    Config[Index] = {
+                        Color = "#" .. Value.HexValue,
+                        Alpha = Value.Alpha
+                    }
+                elseif type(Value) == "table" then
+                    local Array = { }
+                    local IsArray = true
+                    local Count = 0
+
+                    for Key, Item in Value do
+                        if type(Key) ~= "number" then
+                            IsArray = false
+                            break
+                        end
+
+                        Count = Count + 1
+                        Array[Key] = Item
+                    end
+
+                    if IsArray and Count > 0 then
+                        Config[Index] = Array
+                    end
                 else
                     Config[Index] = Value
                 end
             end
-        end)
+        end
 
         return EncodeConfig(HttpService:JSONEncode(Config))
     end
 
     Library.LoadConfig = function(self, Config)
-        local Decoded = HttpService:JSONDecode(DecodeConfig(Config))
+        local DecodeSuccess, Decoded = pcall(function()
+            return HttpService:JSONDecode(DecodeConfig(Config))
+        end)
 
-        local Success, Result = Library:SafeCall(function()
-            for Index, Value in Decoded do 
-                local SetFunction = Library.SetFlags[Index]
+        if not DecodeSuccess or type(Decoded) ~= "table" then
+            warn("Invalid config")
+            return false, 0
+        end
 
-                if not SetFunction then
-                    continue
-                end
+        local Applied = 0
+        local Failed = 0
 
-                if type(Value) == "table" and Value.Key then 
+        for Index, Value in Decoded do
+            local Flag = tostring(Index)
+            local SetFunction = Library.SetFlags[Flag]
+
+            if not SetFunction then
+                continue
+            end
+
+            local SetSuccess, SetError = pcall(function()
+                if type(Value) == "table" and Value.Key then
                     SetFunction(Value)
                 elseif type(Value) == "table" and Value.Color then
                     SetFunction(Value.Color, Value.Alpha)
+                elseif type(Value) == "table" then
+                    SetFunction(Value)
                 else
                     SetFunction(Value)
                 end
-            end
-        end)
+            end)
 
-        return Success, Result
+            if SetSuccess then
+                Applied = Applied + 1
+            else
+                Failed = Failed + 1
+                warn(SetError)
+            end
+        end
+
+        return Failed == 0, Applied
     end
 
     Library.DeleteConfig = function(self, Config)
-        if isfile(Library.Folders.Configs .. "/" .. Config) then 
-            delfile(Library.Folders.Configs .. "/" .. Config)
+        local Path = GetConfigPath(Config)
+        if Path and isfile(Path) then
+            delfile(Path)
         end
     end
 
@@ -3984,27 +4046,25 @@ local Library do
                     Name = "Delete", 
                     Callback = function()
                     if ConfigSelected then
-                        local FileToDelete = ConfigSelected
-                        if not isfile(Library.Folders.Configs .. "/" .. FileToDelete) then
-                            FileToDelete = FileToDelete .. ".Paradise"
-                        end
-                        Library:DeleteConfig(FileToDelete)
-                        Library:RefreshConfigsList(ConfigsList)
+                        Library:DeleteConfig(ConfigSelected)
+                        ConfigSelected = nil
                     end
+                    Library:RefreshConfigsList(ConfigsList)
                 end})
 
                 ConfigsSection:Button({
                     Name = "Load", 
                     Callback = function()
                     if ConfigSelected then
-                        local FileToLoad = ConfigSelected
-                        if not isfile(Library.Folders.Configs .. "/" .. FileToLoad) then
-                            FileToLoad = FileToLoad .. ".Paradise"
-                        end
-                        if isfile(Library.Folders.Configs .. "/" .. FileToLoad) then
-                            Library:LoadConfig(readfile(Library.Folders.Configs .. "/" .. FileToLoad))
+                        local FileToLoad = GetConfigPath(ConfigSelected)
+                        if FileToLoad and isfile(FileToLoad) then
+                            local Success, Applied = Library:LoadConfig(readfile(FileToLoad))
+                            if Applied == 0 then
+                                warn("No config flags were applied")
+                            end
                         end
                     end
+                    Library:RefreshConfigsList(ConfigsList)
                 end})
 
                 ConfigsSection:Button({
@@ -4012,13 +4072,7 @@ local Library do
                     Callback = function()
                     if ConfigName and ConfigName ~= "" then
                         writefile(Library.Folders.Configs .. "/" .. ConfigName .. ".Paradise", Library:GetConfig())
-                        Library:RefreshConfigsList(ConfigsList)
                     end
-                end})
-
-                ConfigsSection:Button({
-                    Name = "Refresh", 
-                    Callback = function()
                     Library:RefreshConfigsList(ConfigsList)
                 end})
 
