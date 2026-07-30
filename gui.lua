@@ -4151,7 +4151,7 @@ local Library do
                         local List = { }
                         for Index, Value in listfiles(Library.Folders.Assets) do
                             local FileName = StringGSub(Value, "^.*/", "")
-                            local Extension = StringLower(StringSub(FileName, -4))
+                            local Extension = string.lower(StringSub(FileName, -4))
                             if Extension == ".png" or Extension == ".jpg" then
                                 TableInsert(List, FileName)
                             end
@@ -4166,7 +4166,7 @@ local Library do
                     local DefaultFound = false
                     for Index, Value in listfiles(Library.Folders.Assets) do
                         local FileName = StringGSub(Value, "^.*/", "")
-                        local Extension = StringLower(StringSub(FileName, -4))
+                        local Extension = string.lower(StringSub(FileName, -4))
                         if Extension == ".png" or Extension == ".jpg" then
                             TableInsert(List, FileName)
                             if FileName == "Bacgraund.jpg" then
