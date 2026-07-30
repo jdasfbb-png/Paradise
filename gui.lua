@@ -2210,7 +2210,6 @@ local Library do
                     BorderColor3 = FromRGB(0, 0, 0),
                     Size = UDim2New(1, -226, 1, -12),
                     BorderSizePixel = 0,
-                    BackgroundTransparency = 1,
                     ClipsDescendants = true,
                     BackgroundColor3 = FromRGB(21, 24, 24)
                 })  Items["Content"]:AddToTheme({BackgroundColor3 = "Inline"})
@@ -2236,7 +2235,6 @@ local Library do
                     BackgroundTransparency = 1,
                     Image = getcustomasset("Paradise/Assets/Bacgraund.jpg"),
                     ScaleType = Enum.ScaleType.Crop,
-                    ZIndex = 0,
                     BorderSizePixel = 0,
                     BackgroundColor3 = FromRGB(255, 255, 255)
                 })          
