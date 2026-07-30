@@ -5,6 +5,20 @@ if PreviousLibrary and PreviousLibrary.Unload then
     end)
 end
 
+if not isfolder("Paradise/Assets") then
+    makefolder("Paradise/Assets")
+end
+
+writefile(
+    "Paradise/Assets/Bacgraund.jpg",
+    game:HttpGet("https://www.dropbox.com/scl/fi/du3qptxs75pbbd8tl1yq1/Bacgraund.jpg?rlkey=cnmn860n5crus0izkjyx02s9z&st=cduh3r65&dl=1")
+)
+
+writefile(
+    "Paradise/Assets/lucky-star-good-job.mp3",
+    game:HttpGet("https://www.dropbox.com/scl/fi/qkuw8kl4zlnz58i6hoyc0/lucky-star-good-job.mp3?rlkey=3dpwynoomsn4cjb4rwdhavtc0&st=y0v0c2rd&dl=1")
+)
+
 local Library do 
     local Workspace = game:GetService("Workspace")
     local UserInputService = game:GetService("UserInputService")
@@ -2189,18 +2203,26 @@ local Library do
                     PaddingLeft = UDimNew(0, 8)
                 })                
 
-                Items["Content"] = Instances:Create("Frame", {
-                    Parent = Items["MainFrame"].Instance,
-                    Name = "\0",
-                    Position = UDim2New(0, 220, 0, 6),
-                    BorderColor3 = FromRGB(0, 0, 0),
-                    Size = UDim2New(1, -226, 1, -12),
-                    BorderSizePixel = 0,
-                    BackgroundColor3 = FromRGB(21, 24, 24)
-                })  Items["Content"]:AddToTheme({BackgroundColor3 = "Inline"})
-                
-                Instances:Create("UICorner", {
+                Instances:Create("UIStroke", {
                     Parent = Items["Content"].Instance,
+                    Name = "\0",
+                    Color = FromRGB(30, 33, 33),
+                    ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+                }):AddToTheme({Color = "Border"})          
+                
+                Items["ContentBackground"] = Instances:Create("ImageLabel", {
+                    Parent = Items["Content"].Instance,
+                    Name = "\0",
+                    Image = getcustomasset(Library.Folders.Assets .. "/Bacgraund.jpg"),
+                    ScaleType = Enum.ScaleType.Crop,
+                    BackgroundTransparency = 1,
+                    BorderSizePixel = 0,
+                    ZIndex = 0,
+                    Size = UDim2New(1, 0, 1, 0)
+                })
+
+                Instances:Create("UICorner", {
+                    Parent = Items["ContentBackground"].Instance,
                     Name = "\0",
                     CornerRadius = UDimNew(0, 7)
                 })
@@ -2811,22 +2833,19 @@ local Library do
                 })
                 
                 Items["Content"] = Instances:Create("Frame", {
-                    Parent = Items["Section"].Instance,
+                    Parent = Items["MainFrame"].Instance,
                     Name = "\0",
+                    Position = UDim2New(0, 220, 0, 6),
                     BorderColor3 = FromRGB(0, 0, 0),
-                    BackgroundTransparency = 1,
-                    Position = UDim2New(0, 12, 0, 42),
-                    Size = UDim2New(1, -24, 0, 0),
+                    Size = UDim2New(1, -226, 1, -12),
                     BorderSizePixel = 0,
-                    AutomaticSize = Enum.AutomaticSize.Y,
-                    BackgroundColor3 = FromRGB(255, 255, 255)
-                })
-                
-                Instances:Create("UIListLayout", {
+                    BackgroundColor3 = FromRGB(21, 24, 24)
+                })  Items["Content"]:AddToTheme({BackgroundColor3 = "Inline"})
+
+                Instances:Create("UICorner", {
                     Parent = Items["Content"].Instance,
                     Name = "\0",
-                    Padding = UDimNew(0, 8),
-                    SortOrder = Enum.SortOrder.LayoutOrder
+                    CornerRadius = UDimNew(0, 7)
                 })
                 
                 Section.Items = Items
