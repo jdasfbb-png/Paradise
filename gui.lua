@@ -2073,6 +2073,19 @@ local Library do
                     CornerRadius = UDimNew(0, 7)
                 })
                 
+                -- Full-window background image (controlled via Settings > Theming > Background)
+                local BgFull = InstanceNew("ImageLabel")
+                BgFull.Size = UDim2New(1, 0, 1, 0)
+                BgFull.Position = UDim2New(0, 0, 0, 0)
+                BgFull.BackgroundTransparency = 1
+                BgFull.ScaleType = Enum.ScaleType.Crop
+                BgFull.BorderSizePixel = 0
+                BgFull.ZIndex = 2
+                BgFull.Visible = false
+                BgFull.Name = "\0"
+                BgFull.Parent = Items["MainFrame"].Instance
+                Library.BgImageFull = BgFull
+                
                 Items["Side"] = Instances:Create("Frame", {
                     Parent = Items["MainFrame"].Instance,
                     Name = "\0",
@@ -2227,17 +2240,18 @@ local Library do
                     ApplyStrokeMode = Enum.ApplyStrokeMode.Border
                 }):AddToTheme({Color = "Border"})
                 
-                Instances:Create("ImageLabel", {
-                    Parent = Items["Content"].Instance,
-                    Name = "\0",
-                    Size = UDim2New(1, 0, 1, 0),
-                    Position = UDim2New(0, 0, 0, 0),
-                    BackgroundTransparency = 1,
-                    Image = getcustomasset("Paradise/Assets/Bacgraund.jpg"),
-                    ScaleType = Enum.ScaleType.Crop,
-                    BorderSizePixel = 0,
-                    BackgroundColor3 = FromRGB(255, 255, 255)
-                })          
+                -- Content-only background image (controlled via Settings > Theming > Background)
+                local BgContent = InstanceNew("ImageLabel")
+                BgContent.Size = UDim2New(1, 0, 1, 0)
+                BgContent.Position = UDim2New(0, 0, 0, 0)
+                BgContent.BackgroundTransparency = 1
+                BgContent.ScaleType = Enum.ScaleType.Crop
+                BgContent.BorderSizePixel = 0
+                BgContent.ZIndex = 1
+                BgContent.Visible = false
+                BgContent.Name = "\0"
+                BgContent.Parent = Items["Content"].Instance
+                Library.BgImageContent = BgContent          
                 
                 Items["Bottom_"] = Instances:Create("Frame", {
                     Parent = Items["Side"].Instance,
@@ -4037,6 +4051,50 @@ local Library do
         end
     end
 
+    Library.BgEnabled    = false
+    Library.BgFullscreen = false
+    Library.BgImagePath  = "Bacgraund.jpg"
+    Library.BgImageFull    = nil
+    Library.BgImageContent = nil
+
+    Library.UpdateBackground = function(self)
+        local function ApplyImage(lbl, path)
+            if not lbl then return end
+            local ok, asset = pcall(getcustomasset, "Paradise/Assets/" .. path)
+            if ok and asset then
+                lbl.Image = asset
+            end
+        end
+        local path = Library.BgImagePath or "Bacgraund.jpg"
+        if Library.BgEnabled then
+            if Library.BgFullscreen then
+                ApplyImage(Library.BgImageFull, path)
+                if Library.BgImageFull    then Library.BgImageFull.Visible    = true  end
+                if Library.BgImageContent then Library.BgImageContent.Visible = false end
+            else
+                ApplyImage(Library.BgImageContent, path)
+                if Library.BgImageContent then Library.BgImageContent.Visible = true  end
+                if Library.BgImageFull    then Library.BgImageFull.Visible    = false end
+            end
+        else
+            if Library.BgImageFull    then Library.BgImageFull.Visible    = false end
+            if Library.BgImageContent then Library.BgImageContent.Visible = false end
+        end
+    end
+
+    Library.ScanBackgroundImages = function(self)
+        local list = {}
+        if isfolder("Paradise/Assets") then
+            for _, file in listfiles("Paradise/Assets") do
+                local name = tostring(file):match("([^\\/]+)$") or tostring(file)
+                if name:match("%.png$") or name:match("%.jpg$") or name:match("%.PNG$") or name:match("%.JPG$") then
+                    table.insert(list, name)
+                end
+            end
+        end
+        return list
+    end
+
     Library.CreateSettingsPage = function(self, Window)
         local SettingsPage = Window:Page({Name = "Settings", Icon = "72732892493295"}) do 
             local ConfigsSubPage = SettingsPage:SubPage({Name = "Configs"})
@@ -4134,6 +4192,62 @@ local Library do
                         end
                     })
                 end
+            end
+
+            do -- Background
+                local BgSection = ThemingSubPage:Section({Name = "Background", Icon = "131595494666590", Side = 1})
+
+                BgSection:Toggle({
+                    Name = "Show Background",
+                    Flag = "BgEnabled",
+                    Default = false,
+                    Callback = function(Value)
+                        Library.BgEnabled = Value
+                        Library:UpdateBackground()
+                    end
+                })
+
+                BgSection:Toggle({
+                    Name = "Full Window",
+                    Flag = "BgFullscreen",
+                    Default = false,
+                    Callback = function(Value)
+                        Library.BgFullscreen = Value
+                        Library:UpdateBackground()
+                    end
+                })
+
+                local ImageList = Library:ScanBackgroundImages()
+
+                local ImageDropdown = BgSection:Dropdown({
+                    Name = "Image",
+                    Flag = "BgImage",
+                    Items = ImageList,
+                    Multi = false,
+                    Default = (#ImageList > 0) and ImageList[1] or "",
+                    Callback = function(Value)
+                        if Value and Value ~= "" then
+                            Library.BgImagePath = Value
+                            Library:UpdateBackground()
+                        end
+                    end
+                })
+
+                if #ImageList > 0 then
+                    Library.BgImagePath = ImageList[1]
+                end
+
+                BgSection:Button({
+                    Name = "Refresh",
+                    Callback = function()
+                        local NewList = Library:ScanBackgroundImages()
+                        ImageDropdown:Refresh(NewList)
+                        if #NewList > 0 then
+                            Library.BgImagePath = NewList[1]
+                            Library:UpdateBackground()
+                        end
+                    end
+                })
             end
 
             do -- Settings
