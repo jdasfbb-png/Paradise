@@ -2080,7 +2080,7 @@ local Library do
                 BgFull.BackgroundTransparency = 1
                 BgFull.ScaleType = Enum.ScaleType.Crop
                 BgFull.BorderSizePixel = 0
-                BgFull.ZIndex = 2
+                BgFull.ZIndex = 0
                 BgFull.Visible = false
                 BgFull.Name = "\0"
                 BgFull.Parent = Items["MainFrame"].Instance
