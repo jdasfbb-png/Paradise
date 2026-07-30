@@ -4124,15 +4124,42 @@ local Library do
             end
 
             do -- Background
+                local function ScanBackgroundImages()
+                    local List = { }
+
+                    for Index, Value in listfiles(Library.Folders.Assets) do
+                        local FileName = StringGSub(Value, "^.*/", "")
+                        local Extension = string.lower(StringSub(FileName, -4))
+
+                        if Extension == ".png" or Extension == ".jpg" then
+                            TableInsert(List, FileName)
+                        end
+                    end
+
+                    return List
+                end
+
+                local InitialList = ScanBackgroundImages()
+                local InitialDefault = InitialList[1]
+
+                for Index, Value in InitialList do
+                    if Value == "Bacgraund.jpg" then
+                        InitialDefault = Value
+                        break
+                    end
+                end
+
                 local BackgroundSection = ThemingSubPage:Section({Name = "Background", Icon = "131595494666590", Side = 2})
 
                 local BackgroundImageDropdown = BackgroundSection:Dropdown({
                     Name = "Background Image",
                     Flag = "BackgroundImage",
-                    Items = { },
-                    Default = "Bacgraund.jpg",
+                    Items = InitialList,
+                    Default = InitialDefault,
                     Callback = function(Value)
-                        Window.Items["ContentBackground"].Instance.Image = getcustomasset(Library.Folders.Assets .. "/" .. Value)
+                        if Window.Items["ContentBackground"] and Value then
+                            Window.Items["ContentBackground"].Instance.Image = getcustomasset(Library.Folders.Assets .. "/" .. Value)
+                        end
                     end
                 })
 
@@ -4141,44 +4168,18 @@ local Library do
                     Flag = "ShowBackground",
                     Default = true,
                     Callback = function(Value)
-                        Window.Items["ContentBackground"].Instance.Visible = Value
+                        if Window.Items["ContentBackground"] then
+                            Window.Items["ContentBackground"].Instance.Visible = Value
+                        end
                     end
                 })
 
                 BackgroundSection:Button({
                     Name = "Refresh",
                     Callback = function()
-                        local List = { }
-                        for Index, Value in listfiles(Library.Folders.Assets) do
-                            local FileName = StringGSub(Value, "^.*/", "")
-                            local Extension = string.lower(StringSub(FileName, -4))
-                            if Extension == ".png" or Extension == ".jpg" then
-                                TableInsert(List, FileName)
-                            end
-                        end
-                        BackgroundImageDropdown:Refresh(List)
+                        BackgroundImageDropdown:Refresh(ScanBackgroundImages())
                     end
                 })
-
-                -- Populate the dropdown on page creation
-                do
-                    local List = { }
-                    local DefaultFound = false
-                    for Index, Value in listfiles(Library.Folders.Assets) do
-                        local FileName = StringGSub(Value, "^.*/", "")
-                        local Extension = string.lower(StringSub(FileName, -4))
-                        if Extension == ".png" or Extension == ".jpg" then
-                            TableInsert(List, FileName)
-                            if FileName == "Bacgraund.jpg" then
-                                DefaultFound = true
-                            end
-                        end
-                    end
-                    if not DefaultFound and #List > 0 then
-                        BackgroundImageDropdown:Set(List[1])
-                    end
-                    BackgroundImageDropdown:Refresh(List)
-                end
             end
 
             do -- Settings
