@@ -85,6 +85,7 @@ local Library do
             Directory = "Paradise",
             Configs = "Paradise/Configs",
             Assets = "Paradise/Assets",
+            Fonts = "Paradise/Fonts",
         },
 
         -- Ignore below
