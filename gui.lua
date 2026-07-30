@@ -2203,26 +2203,18 @@ local Library do
                     PaddingLeft = UDimNew(0, 8)
                 })                
 
-                Instances:Create("UIStroke", {
-                    Parent = Items["Content"].Instance,
+                Items["Content"] = Instances:Create("Frame", {
+                    Parent = Items["MainFrame"].Instance,
                     Name = "\0",
-                    Color = FromRGB(30, 33, 33),
-                    ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-                }):AddToTheme({Color = "Border"})          
-                
-                Items["ContentBackground"] = Instances:Create("ImageLabel", {
-                    Parent = Items["Content"].Instance,
-                    Name = "\0",
-                    Image = getcustomasset(Library.Folders.Assets .. "/Bacgraund.jpg"),
-                    ScaleType = Enum.ScaleType.Crop,
-                    BackgroundTransparency = 1,
+                    Position = UDim2New(0, 220, 0, 6),
+                    BorderColor3 = FromRGB(0, 0, 0),
+                    Size = UDim2New(1, -226, 1, -12),
                     BorderSizePixel = 0,
-                    ZIndex = 0,
-                    Size = UDim2New(1, 0, 1, 0)
-                })
-
+                    BackgroundColor3 = FromRGB(21, 24, 24)
+                })  Items["Content"]:AddToTheme({BackgroundColor3 = "Inline"})
+                
                 Instances:Create("UICorner", {
-                    Parent = Items["ContentBackground"].Instance,
+                    Parent = Items["Content"].Instance,
                     Name = "\0",
                     CornerRadius = UDimNew(0, 7)
                 })
@@ -2833,19 +2825,22 @@ local Library do
                 })
                 
                 Items["Content"] = Instances:Create("Frame", {
-                    Parent = Items["MainFrame"].Instance,
+                    Parent = Items["Section"].Instance,
                     Name = "\0",
-                    Position = UDim2New(0, 220, 0, 6),
                     BorderColor3 = FromRGB(0, 0, 0),
-                    Size = UDim2New(1, -226, 1, -12),
+                    BackgroundTransparency = 1,
+                    Position = UDim2New(0, 12, 0, 42),
+                    Size = UDim2New(1, -24, 0, 0),
                     BorderSizePixel = 0,
-                    BackgroundColor3 = FromRGB(21, 24, 24)
-                })  Items["Content"]:AddToTheme({BackgroundColor3 = "Inline"})
-
-                Instances:Create("UICorner", {
+                    AutomaticSize = Enum.AutomaticSize.Y,
+                    BackgroundColor3 = FromRGB(255, 255, 255)
+                })
+                
+                Instances:Create("UIListLayout", {
                     Parent = Items["Content"].Instance,
                     Name = "\0",
-                    CornerRadius = UDimNew(0, 7)
+                    Padding = UDimNew(0, 8),
+                    SortOrder = Enum.SortOrder.LayoutOrder
                 })
                 
                 Section.Items = Items
