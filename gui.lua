@@ -7,17 +7,17 @@ end
 
 if not isfolder("Paradise/Assets") then
     makefolder("Paradise/Assets")
+
+    writefile(
+        "Paradise/Assets/Bacgraund.jpg",
+        game:HttpGet("https://www.dropbox.com/scl/fi/du3qptxs75pbbd8tl1yq1/Bacgraund.jpg?rlkey=cnmn860n5crus0izkjyx02s9z&st=cduh3r65&dl=1")
+    )
+
+    writefile(
+        "Paradise/Assets/lucky-star-good-job.mp3",
+        game:HttpGet("https://www.dropbox.com/scl/fi/qkuw8kl4zlnz58i6hoyc0/lucky-star-good-job.mp3?rlkey=3dpwynoomsn4cjb4rwdhavtc0&st=y0v0c2rd&dl=1")
+    )
 end
-
-writefile(
-    "Paradise/Assets/Bacgraund.jpg",
-    game:HttpGet("https://www.dropbox.com/scl/fi/du3qptxs75pbbd8tl1yq1/Bacgraund.jpg?rlkey=cnmn860n5crus0izkjyx02s9z&st=cduh3r65&dl=1")
-)
-
-writefile(
-    "Paradise/Assets/lucky-star-good-job.mp3",
-    game:HttpGet("https://www.dropbox.com/scl/fi/qkuw8kl4zlnz58i6hoyc0/lucky-star-good-job.mp3?rlkey=3dpwynoomsn4cjb4rwdhavtc0&st=y0v0c2rd&dl=1")
-)
 
 local Library do 
     local Workspace = game:GetService("Workspace")
@@ -2073,19 +2073,6 @@ local Library do
                     CornerRadius = UDimNew(0, 7)
                 })
                 
-                -- Full-window background image (controlled via Settings > Theming > Background)
-                local BgFull = InstanceNew("ImageLabel")
-                BgFull.Size = UDim2New(1, 0, 1, 0)
-                BgFull.Position = UDim2New(0, 0, 0, 0)
-                BgFull.BackgroundTransparency = 1
-                BgFull.ScaleType = Enum.ScaleType.Crop
-                BgFull.BorderSizePixel = 0
-                BgFull.ZIndex = 0
-                BgFull.Visible = false
-                BgFull.Name = "\0"
-                BgFull.Parent = Items["MainFrame"].Instance
-                Library.BgImageFull = BgFull
-                
                 Items["Side"] = Instances:Create("Frame", {
                     Parent = Items["MainFrame"].Instance,
                     Name = "\0",
@@ -2240,18 +2227,19 @@ local Library do
                     ApplyStrokeMode = Enum.ApplyStrokeMode.Border
                 }):AddToTheme({Color = "Border"})
                 
-                -- Content-only background image (controlled via Settings > Theming > Background)
-                local BgContent = InstanceNew("ImageLabel")
-                BgContent.Size = UDim2New(1, 0, 1, 0)
-                BgContent.Position = UDim2New(0, 0, 0, 0)
-                BgContent.BackgroundTransparency = 1
-                BgContent.ScaleType = Enum.ScaleType.Crop
-                BgContent.BorderSizePixel = 0
-                BgContent.ZIndex = 1
-                BgContent.Visible = false
-                BgContent.Name = "\0"
-                BgContent.Parent = Items["Content"].Instance
-                Library.BgImageContent = BgContent          
+                do
+                    local BgContent = InstanceNew("ImageLabel")
+                    BgContent.Size = UDim2New(1, 0, 1, 0)
+                    BgContent.Position = UDim2New(0, 0, 0, 0)
+                    BgContent.BackgroundTransparency = 1
+                    BgContent.ScaleType = Enum.ScaleType.Crop
+                    BgContent.BorderSizePixel = 0
+                    BgContent.ZIndex = 0
+                    BgContent.Visible = false
+                    BgContent.Name = "\0"
+                    BgContent.Parent = Items["Content"].Instance
+                    Library.BgImageContent = BgContent
+                end          
                 
                 Items["Bottom_"] = Instances:Create("Frame", {
                     Parent = Items["Side"].Instance,
@@ -4051,34 +4039,21 @@ local Library do
         end
     end
 
-    Library.BgEnabled    = false
-    Library.BgFullscreen = false
-    Library.BgImagePath  = "Bacgraund.jpg"
-    Library.BgImageFull    = nil
+    Library.BgEnabled   = false
+    Library.BgImagePath = "Bacgraund.jpg"
     Library.BgImageContent = nil
 
     Library.UpdateBackground = function(self)
-        local function ApplyImage(lbl, path)
-            if not lbl then return end
-            local ok, asset = pcall(getcustomasset, "Paradise/Assets/" .. path)
-            if ok and asset then
-                lbl.Image = asset
-            end
-        end
-        local path = Library.BgImagePath or "Bacgraund.jpg"
+        if not Library.BgImageContent then return end
         if Library.BgEnabled then
-            if Library.BgFullscreen then
-                ApplyImage(Library.BgImageFull, path)
-                if Library.BgImageFull    then Library.BgImageFull.Visible    = true  end
-                if Library.BgImageContent then Library.BgImageContent.Visible = false end
-            else
-                ApplyImage(Library.BgImageContent, path)
-                if Library.BgImageContent then Library.BgImageContent.Visible = true  end
-                if Library.BgImageFull    then Library.BgImageFull.Visible    = false end
+            local path = "Paradise/Assets/" .. (Library.BgImagePath or "Bacgraund.jpg")
+            local ok, asset = pcall(getcustomasset, path)
+            if ok and asset then
+                Library.BgImageContent.Image = asset
             end
+            Library.BgImageContent.Visible = true
         else
-            if Library.BgImageFull    then Library.BgImageFull.Visible    = false end
-            if Library.BgImageContent then Library.BgImageContent.Visible = false end
+            Library.BgImageContent.Visible = false
         end
     end
 
@@ -4087,7 +4062,7 @@ local Library do
         if isfolder("Paradise/Assets") then
             for _, file in listfiles("Paradise/Assets") do
                 local name = tostring(file):match("([^\\/]+)$") or tostring(file)
-                if name:match("%.png$") or name:match("%.jpg$") or name:match("%.PNG$") or name:match("%.JPG$") then
+                if name:match("%.[pP][nN][gG]$") or name:match("%.[jJ][pP][gG]$") or name:match("%.[jJ][pP][eE][gG]$") then
                     table.insert(list, name)
                 end
             end
@@ -4203,16 +4178,6 @@ local Library do
                     Default = false,
                     Callback = function(Value)
                         Library.BgEnabled = Value
-                        Library:UpdateBackground()
-                    end
-                })
-
-                BgSection:Toggle({
-                    Name = "Full Window",
-                    Flag = "BgFullscreen",
-                    Default = false,
-                    Callback = function(Value)
-                        Library.BgFullscreen = Value
                         Library:UpdateBackground()
                     end
                 })
