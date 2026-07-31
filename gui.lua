@@ -4166,7 +4166,7 @@ local Library do
 
                 local BackgroundSection = ThemingSubPage:Section({Name = "Background", Icon = "131595494666590", Side = 2})
 
-                local BgVisible = true
+                local BgVisible = false
                 local BgCurrentPath = InitialDefault
 
                 local function ApplyBackground()
@@ -4186,7 +4186,7 @@ local Library do
                     Name = "Background Image",
                     Flag = "BackgroundImage",
                     Items = InitialList,
-                    Default = false,
+                    Default = InitialDefault,
                     Callback = function(Value)
                         BgCurrentPath = Value
                         ApplyBackground()
@@ -4196,7 +4196,7 @@ local Library do
                 BackgroundSection:Toggle({
                     Name = "Show Background",
                     Flag = "ShowBackground",
-                    Default = true,
+                    Default = false,
                     Callback = function(Value)
                         BgVisible = Value
                         ApplyBackground()
@@ -4213,6 +4213,77 @@ local Library do
                 task.defer(ApplyBackground)
             end
 
+
+            do -- Sound
+                local function ScanSoundFiles()
+                    local List = { }
+
+                    for Index, Value in listfiles(Library.Folders.Assets) do
+                        local FileName = StringGSub(Value, "^.*[/\\]", "")
+                        local Extension = string.lower(StringSub(FileName, -4))
+
+                        if Extension == ".mp3" or Extension == ".ogg" then
+                            TableInsert(List, FileName)
+                        end
+                    end
+
+                    return List
+                end
+
+                local SoundEnabled = false
+                local SoundCurrentPath = "lucky-star-good-job.mp3"
+
+                local OpenSound = Instance.new("Sound")
+                OpenSound.Volume = 1
+                OpenSound.Parent = workspace
+
+                Library:Connect(OpenSound.AncestryChanged, function()
+                    if not OpenSound.Parent then
+                        OpenSound = Instance.new("Sound")
+                        OpenSound.Volume = 1
+                        OpenSound.Parent = workspace
+                    end
+                end)
+
+                local OrigSetOpen = Window.SetOpen
+                Window.SetOpen = function(self, Bool)
+                    if Bool and SoundEnabled and SoundCurrentPath ~= "" and isfile(Library.Folders.Assets .. "/" .. SoundCurrentPath) then
+                        OpenSound.SoundId = getcustomasset(Library.Folders.Assets .. "/" .. SoundCurrentPath)
+                        OpenSound:Stop()
+                        OpenSound:Play()
+                    end
+                    return OrigSetOpen(self, Bool)
+                end
+
+                local SoundInitialList = ScanSoundFiles()
+                local SoundSection = SettingsSubPage:Section({Name = "Open Sound", Icon = "72732892493295", Side = 2})
+
+                local SoundDropdown = SoundSection:Dropdown({
+                    Name = "Sound File",
+                    Flag = "OpenSoundFile",
+                    Items = SoundInitialList,
+                    Default = SoundCurrentPath,
+                    Callback = function(Value)
+                        SoundCurrentPath = Value or SoundCurrentPath
+                    end
+                })
+
+                SoundSection:Toggle({
+                    Name = "Play on Open",
+                    Flag = "OpenSoundEnabled",
+                    Default = false,
+                    Callback = function(Value)
+                        SoundEnabled = Value
+                    end
+                })
+
+                SoundSection:Button({
+                    Name = "Refresh",
+                    Callback = function()
+                        SoundDropdown:Refresh(ScanSoundFiles())
+                    end
+                })
+            end
             do -- Settings
                 local SettingsSection = SettingsSubPage:Section({Name = "Settings", Icon = "72732892493295", Side = 1})     
                 
