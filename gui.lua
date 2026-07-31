@@ -2207,6 +2207,7 @@ local Library do
                 Items["Content"] = Instances:Create("Frame", {
                     Parent = Items["MainFrame"].Instance,
                     Name = "\0",
+                    ClipsDescendants = true,
                     Position = UDim2New(0, 220, 0, 6),
                     BorderColor3 = FromRGB(0, 0, 0),
                     Size = UDim2New(1, -226, 1, -12),
@@ -2225,7 +2226,20 @@ local Library do
                     Name = "\0",
                     Color = FromRGB(30, 33, 33),
                     ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-                }):AddToTheme({Color = "Border"})          
+                }):AddToTheme({Color = "Border"})
+
+                Items["ContentBackground"] = Instances:Create("ImageLabel", {
+                    Parent = Items["Content"].Instance,
+                    Name = "\0",
+                    BorderColor3 = FromRGB(0, 0, 0),
+                    BorderSizePixel = 0,
+                    Size = UDim2New(1, 0, 1, 0),
+                    ScaleType = Enum.ScaleType.Crop,
+                    Image = "",
+                    ImageTransparency = 1,
+                    BackgroundTransparency = 1,
+                    Visible = false
+                })
                 
                 Items["Bottom_"] = Instances:Create("Frame", {
                     Parent = Items["Side"].Instance,
@@ -4129,7 +4143,7 @@ local Library do
                     local List = { }
 
                     for Index, Value in listfiles(Library.Folders.Assets) do
-                        local FileName = StringGSub(Value, "^.*/", "")
+                        local FileName = StringGSub(Value, "^.*[/\\]", "")
                         local Extension = string.lower(StringSub(FileName, -4))
 
                         if Extension == ".png" or Extension == ".jpg" then
@@ -4152,15 +4166,30 @@ local Library do
 
                 local BackgroundSection = ThemingSubPage:Section({Name = "Background", Icon = "131595494666590", Side = 2})
 
+                local BgVisible = true
+                local BgCurrentPath = InitialDefault
+
+                local function ApplyBackground()
+                    local Bg = Window.Items["ContentBackground"]
+                    if not Bg then return end
+
+                    if BgVisible and BgCurrentPath and BgCurrentPath ~= "" and isfile(Library.Folders.Assets .. "/" .. BgCurrentPath) then
+                        Bg.Instance.Image = getcustomasset(Library.Folders.Assets .. "/" .. BgCurrentPath)
+                        Bg.Instance.ImageTransparency = 0
+                        Bg.Instance.Visible = true
+                    else
+                        Bg.Instance.Visible = false
+                    end
+                end
+
                 local BackgroundImageDropdown = BackgroundSection:Dropdown({
                     Name = "Background Image",
                     Flag = "BackgroundImage",
                     Items = InitialList,
                     Default = InitialDefault,
                     Callback = function(Value)
-                        if Window.Items["ContentBackground"] and Value then
-                            Window.Items["ContentBackground"].Instance.Image = getcustomasset(Library.Folders.Assets .. "/" .. Value)
-                        end
+                        BgCurrentPath = Value
+                        ApplyBackground()
                     end
                 })
 
@@ -4169,9 +4198,8 @@ local Library do
                     Flag = "ShowBackground",
                     Default = true,
                     Callback = function(Value)
-                        if Window.Items["ContentBackground"] then
-                            Window.Items["ContentBackground"].Instance.Visible = Value
-                        end
+                        BgVisible = Value
+                        ApplyBackground()
                     end
                 })
 
@@ -4181,6 +4209,8 @@ local Library do
                         BackgroundImageDropdown:Refresh(ScanBackgroundImages())
                     end
                 })
+
+                task.defer(ApplyBackground)
             end
 
             do -- Settings
