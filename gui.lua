@@ -4186,7 +4186,7 @@ local Library do
                     Name = "Background Image",
                     Flag = "BackgroundImage",
                     Items = InitialList,
-                    Default = InitialDefault,
+                    Default = false,
                     Callback = function(Value)
                         BgCurrentPath = Value
                         ApplyBackground()
