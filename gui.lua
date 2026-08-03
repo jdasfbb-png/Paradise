@@ -5,20 +5,6 @@ if PreviousLibrary and PreviousLibrary.Unload then
     end)
 end
 
-if not isfolder("Paradise/Assets") then
-    makefolder("Paradise/Assets")
-
-    writefile(
-        "Paradise/Assets/Bacgraund.jpg",
-        game:HttpGet("https://www.dropbox.com/scl/fi/du3qptxs75pbbd8tl1yq1/Bacgraund.jpg?rlkey=cnmn860n5crus0izkjyx02s9z&st=cduh3r65&dl=1")
-    )
-
-    writefile(
-        "Paradise/Assets/lucky-star-good-job.mp3",
-        game:HttpGet("https://www.dropbox.com/scl/fi/qkuw8kl4zlnz58i6hoyc0/lucky-star-good-job.mp3?rlkey=3dpwynoomsn4cjb4rwdhavtc0&st=y0v0c2rd&dl=1")
-    )
-end
-
 local Library do 
     local Workspace = game:GetService("Workspace")
     local UserInputService = game:GetService("UserInputService")
@@ -207,6 +193,23 @@ local Library do
     for Index, Value in Library.Folders do 
         if not isfolder(Value) then
             makefolder(Value)
+        end
+    end
+
+    -- Assets
+    local Assets = {
+        {Name = "Bacgraund.jpg", Url = "https://www.dropbox.com/scl/fi/du3qptxs75pbbd8tl1yq1/Bacgraund.jpg?rlkey=cnmn860n5crus0izkjyx02s9z&st=cduh3r65&dl=1"},
+        {Name = "osu-hit-sound.mp3", Url = "https://www.dropbox.com/scl/fi/frukj1ushibir60wwlu2t/osu-hit-sound.mp3?rlkey=j3l2xl38jpdtjhhtopcvrv1se&st=pefdji4x&dl=1"},
+        {Name = "rust.mp3", Url = "https://www.dropbox.com/scl/fi/i9ugkwnomuspthv3kxjhb/starshitsound.mp3?rlkey=lzoj264dg3d88d5sbdeibyja2&st=ku8bpua5&dl=1"},
+        {Name = "discord-notification.mp3", Url = "https://www.dropbox.com/scl/fi/0ens759t7i1zardnz023k/discord-notification.mp3?rlkey=jp3884klqxdgguaezkeyqlldj&st=gewp2d06&dl=1"},
+        {Name = "eaolwpzhgsba.mp3", Url = "https://www.dropbox.com/scl/fi/y6r3l16ncgi6kon8b1vyz/eaolwpzhgsba.mp3?rlkey=c68rcl32gp74jlphbh4bue89p&st=ck71q8e9&dl=1"},
+        {Name = "neverlose-s.mp3", Url = "https://www.dropbox.com/scl/fi/ay9aqosbn5idub3dqhm1q/neverlose-s.mp3?rlkey=pt8gg71r6erghbt1e6iuzwpuk&st=z7yvqxed&dl=1"},
+    }
+
+    for _, Asset in Assets do
+        local Path = Library.Folders.Assets .. "/" .. Asset.Name
+        if not isfile(Path) then
+            writefile(Path, game:HttpGet(Asset.Url))
         end
     end
 
@@ -2045,7 +2048,6 @@ local Library do
             local Window = {
                 Name = Data.Name or Data.name or "Window",
                 SubTitle = Data.SubTitle or Data.subtitle or (function() local ok, name = pcall(function() return game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId).Name end) if ok and name then return "for " .. name:gsub("%[.-%]", ""):match("^%s*(.-)%s*$") else return "for Unknown" end end)(),
-                ExpiresIn = Data.ExpiresIn or Data.expiresin or "infinite days",
                 
                 Pages = { },
                 Items = { },
@@ -2271,7 +2273,7 @@ local Library do
                     FontFace = Library.Font,
                     TextColor3 = FromRGB(255, 255, 255),
                     TextTransparency = 0.5,
-                    Text = "Sub expires in "..Window.ExpiresIn,
+                    Text = "the subscription will never end",
                     Size = UDim2New(0, 0, 0, 15),
                     BorderSizePixel = 0,
                     BackgroundTransparency = 1,
@@ -4214,76 +4216,7 @@ local Library do
             end
 
 
-            do -- Sound
-                local function ScanSoundFiles()
-                    local List = { }
 
-                    for Index, Value in listfiles(Library.Folders.Assets) do
-                        local FileName = StringGSub(Value, "^.*[/\\]", "")
-                        local Extension = string.lower(StringSub(FileName, -4))
-
-                        if Extension == ".mp3" or Extension == ".ogg" then
-                            TableInsert(List, FileName)
-                        end
-                    end
-
-                    return List
-                end
-
-                local SoundEnabled = false
-                local SoundCurrentPath = "lucky-star-good-job.mp3"
-
-                local OpenSound = Instance.new("Sound")
-                OpenSound.Volume = 1
-                OpenSound.Parent = workspace
-
-                Library:Connect(OpenSound.AncestryChanged, function()
-                    if not OpenSound.Parent then
-                        OpenSound = Instance.new("Sound")
-                        OpenSound.Volume = 1
-                        OpenSound.Parent = workspace
-                    end
-                end)
-
-                local OrigSetOpen = Window.SetOpen
-                Window.SetOpen = function(self, Bool)
-                    if Bool and SoundEnabled and SoundCurrentPath ~= "" and isfile(Library.Folders.Assets .. "/" .. SoundCurrentPath) then
-                        OpenSound.SoundId = getcustomasset(Library.Folders.Assets .. "/" .. SoundCurrentPath)
-                        OpenSound:Stop()
-                        OpenSound:Play()
-                    end
-                    return OrigSetOpen(self, Bool)
-                end
-
-                local SoundInitialList = ScanSoundFiles()
-                local SoundSection = SettingsSubPage:Section({Name = "Open Sound", Icon = "72732892493295", Side = 2})
-
-                local SoundDropdown = SoundSection:Dropdown({
-                    Name = "Sound File",
-                    Flag = "OpenSoundFile",
-                    Items = SoundInitialList,
-                    Default = SoundCurrentPath,
-                    Callback = function(Value)
-                        SoundCurrentPath = Value or SoundCurrentPath
-                    end
-                })
-
-                SoundSection:Toggle({
-                    Name = "Play on Open",
-                    Flag = "OpenSoundEnabled",
-                    Default = false,
-                    Callback = function(Value)
-                        SoundEnabled = Value
-                    end
-                })
-
-                SoundSection:Button({
-                    Name = "Refresh",
-                    Callback = function()
-                        SoundDropdown:Refresh(ScanSoundFiles())
-                    end
-                })
-            end
             do -- Settings
                 local SettingsSection = SettingsSubPage:Section({Name = "Settings", Icon = "72732892493295", Side = 1})     
                 
