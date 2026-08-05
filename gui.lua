@@ -865,6 +865,8 @@ local Library do
             end
         end
 
+        Config["GameId"] = tostring(game.PlaceId)
+
         return EncodeConfig(HttpService:JSONEncode(Config))
     end
 
@@ -924,8 +926,15 @@ local Library do
 
             if StringSub(FileName, -9) == ".Paradise" then
                 local DisplayName = StringSub(FileName, 1, -10)
-                ConfigFileMap[DisplayName] = FileName
-                TableInsert(List, DisplayName)
+                local FilePath = Library.Folders.Configs .. "/" .. FileName
+                local ok, content = pcall(function() return readfile(FilePath) end)
+                if ok and content then
+                    local decoded = HttpService:JSONDecode(DecodeConfig(content))
+                    if decoded and decoded["GameId"] == tostring(game.PlaceId) then
+                        ConfigFileMap[DisplayName] = FileName
+                        TableInsert(List, DisplayName)
+                    end
+                end
             end
         end
 
