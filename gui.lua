@@ -518,9 +518,8 @@ local Library do
     -- Custom font
     local CustomFont = { } do
         function CustomFont:New(Name, Weight, Style, Data)
-            local FontPath = Library.Folders.Fonts .. "/" .. Data.Id .. ".font"
-            if not isfile(FontPath) then 
-                writefile(FontPath, game:HttpGet(Data.Url))
+            if not isfile(Data.Id) then 
+                writefile(Data.Id, game:HttpGet(Data.Url))
             end
 
             local Data = {
@@ -530,13 +529,13 @@ local Library do
                         name = Name,
                         weight = Weight,
                         style = Style,
-                        assetId = getcustomasset(FontPath)
+                        assetId = getcustomasset(Data.Id)
                     }
                 }
             }
 
             writefile(`{Library.Folders.Fonts}/{Name}.font`, HttpService:JSONEncode(Data))
-            return Font.new(getcustomasset(FontPath), Enum.FontWeight.Regular, Enum.FontStyle.Normal)
+            return Font.new(getcustomasset(`{Library.Folders.Fonts}/{Name}.font`), Enum.FontWeight.Regular, Enum.FontStyle.Normal)
         end
 
         Library.Font = CustomFont:New("InterSemiBold", "Regular", "Normal", {
