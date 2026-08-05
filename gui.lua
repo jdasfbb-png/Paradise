@@ -198,12 +198,12 @@ local Library do
 
     -- Assets
     local Assets = {
-        {Name = "Bacgraund.jpg", Url = "https://www.dropbox.com/scl/fi/du3qptxs75pbbd8tl1yq1/Bacgraund.jpg?rlkey=cnmn860n5crus0izkjyx02s9z&st=cduh3r65&dl=1"},
-        {Name = "osu-hit-sound.mp3", Url = "https://www.dropbox.com/scl/fi/frukj1ushibir60wwlu2t/osu-hit-sound.mp3?rlkey=j3l2xl38jpdtjhhtopcvrv1se&st=pefdji4x&dl=1"},
-        {Name = "rust.mp3", Url = "https://www.dropbox.com/scl/fi/i9ugkwnomuspthv3kxjhb/starshitsound.mp3?rlkey=lzoj264dg3d88d5sbdeibyja2&st=ku8bpua5&dl=1"},
+        {Name = "Bacgraund.jpg",            Url = "https://www.dropbox.com/scl/fi/du3qptxs75pbbd8tl1yq1/Bacgraund.jpg?rlkey=cnmn860n5crus0izkjyx02s9z&st=cduh3r65&dl=1"},
+        {Name = "osu-hit-sound.mp3",        Url = "https://www.dropbox.com/scl/fi/frukj1ushibir60wwlu2t/osu-hit-sound.mp3?rlkey=j3l2xl38jpdtjhhtopcvrv1se&st=pefdji4x&dl=1"},
+        {Name = "rust.mp3",                 Url = "https://www.dropbox.com/scl/fi/i9ugkwnomuspthv3kxjhb/starshitsound.mp3?rlkey=lzoj264dg3d88d5sbdeibyja2&st=ku8bpua5&dl=1"},
         {Name = "discord-notification.mp3", Url = "https://www.dropbox.com/scl/fi/0ens759t7i1zardnz023k/discord-notification.mp3?rlkey=jp3884klqxdgguaezkeyqlldj&st=gewp2d06&dl=1"},
-        {Name = "eaolwpzhgsba.mp3", Url = "https://www.dropbox.com/scl/fi/y6r3l16ncgi6kon8b1vyz/eaolwpzhgsba.mp3?rlkey=c68rcl32gp74jlphbh4bue89p&st=ck71q8e9&dl=1"},
-        {Name = "neverlose-s.mp3", Url = "https://www.dropbox.com/scl/fi/ay9aqosbn5idub3dqhm1q/neverlose-s.mp3?rlkey=pt8gg71r6erghbt1e6iuzwpuk&st=z7yvqxed&dl=1"},
+        {Name = "eaolwpzhgsba.mp3",         Url = "https://www.dropbox.com/scl/fi/y6r3l16ncgi6kon8b1vyz/eaolwpzhgsba.mp3?rlkey=c68rcl32gp74jlphbh4bue89p&st=ck71q8e9&dl=1"},
+        {Name = "neverlose-s.mp3",          Url = "https://www.dropbox.com/scl/fi/ay9aqosbn5idub3dqhm1q/neverlose-s.mp3?rlkey=pt8gg71r6erghbt1e6iuzwpuk&st=z7yvqxed&dl=1"},
     }
 
     for _, Asset in Assets do
@@ -535,7 +535,7 @@ local Library do
             }
 
             writefile(`{Library.Folders.Fonts}/{Name}.font`, HttpService:JSONEncode(Data))
-            return Font.new(getcustomasset(`{Library.Folders.Fonts}/{Name}.font`), Enum.FontWeight.Regular, Enum.FontStyle.Normal)
+            return Font.new(getcustomasset(Data.Id), Enum.FontWeight.Regular, Enum.FontStyle.Normal)
         end
 
         Library.Font = CustomFont:New("InterSemiBold", "Regular", "Normal", {
