@@ -1,0 +1,88 @@
+local DragConns = {}
+local DragAlive = false
+
+local function HardDragOff()
+    DragAlive = false
+    for i, c in pairs(DragConns) do c:Disconnect() end
+    DragConns = {}
+    local gui = Players.LocalPlayer.PlayerGui:FindFirstChild("ItemDraggingGUI")
+    local env = gui and gui:FindFirstChild("Dragger") and getsenv(gui.Dragger)
+    if env then
+        for i, name in pairs({"click", "clickEnded", "rotate", "holdDistanceChanged"}) do
+            pcall(restorefunction, env[name])
+        end
+    end
+end
+
+local function HardDragOn()
+    HardDragOff()
+    local OrigScript = Players.LocalPlayer.PlayerGui:WaitForChild("ItemDraggingGUI"):WaitForChild("Dragger")
+    local env
+    repeat
+        task.wait()
+        env = getsenv(OrigScript)
+    until env and env.initializeDrag and env.click
+    DragAlive = true
+
+    local Mouse = Players.LocalPlayer:GetMouse()
+    local Camera = workspace.CurrentCamera
+    local GetItem = require(game:GetService("ReplicatedStorage").Util.GetItem)
+    local ClientIsDragging = game:GetService("ReplicatedStorage").Interaction.ClientIsDragging
+    local Dragger = debug.getupvalue(env.initializeDrag, 4)
+    local Track = debug.getupvalue(env.click, 4)
+    local BP = Dragger:FindFirstChildOfClass("BodyPosition")
+    local BG = debug.getupvalue(env.click, 8)
+
+    for i, name in pairs({"click", "clickEnded", "rotate", "holdDistanceChanged"}) do
+        hookfunction(env[name], function() end)
+    end
+    env.endDrag()
+
+    BP.P = 500000
+    BP.D = 1500
+    BP.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+    BG.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
+    BG.P = 30000
+    BG.D = 300
+
+    local holding, dragging, savedSpeed = false, false, nil
+    local rotation = CFrame.new()
+    local keys = {
+        [Enum.KeyCode.A] = CFrame.Angles(0, 0.036, 0),
+        [Enum.KeyCode.D] = CFrame.Angles(0, -0.036, 0),
+        [Enum.KeyCode.W] = CFrame.Angles(-0.036, 0, 0),
+        [Enum.KeyCode.S] = CFrame.Angles(0.036, 0, 0),
+        [Enum.KeyCode.Q] = CFrame.Angles(0, 0, 0.036),
+        [Enum.KeyCode.E] = CFrame.Angles(0, 0, -0.036),
+    }
+
+    local function drag()
+        -- тело drag() из drag test.lua без изменений,
+        -- только `alive` заменён на `DragAlive`
+    end
+
+    table.insert(DragConns, services.UserInputService.InputBegan:Connect(function(input, gpe)
+        if not gpe and input.UserInputType == Enum.UserInputType.MouseButton1 then
+            holding = true
+            task.spawn(drag)
+        end
+    end))
+    table.insert(DragConns, services.UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            holding = false
+        end
+    end))
+end
+
+PMisc:Toggle("Hard Dragger", "HardDragger", autoload.players.HardDragger, function(v)
+    autoload.players.HardDragger = v
+    save()
+    if v then task.spawn(HardDragOn) else HardDragOff() end
+end)
+
+Players.LocalPlayer.CharacterAdded:Connect(function()
+    if autoload.players.HardDragger then
+        task.wait(1)
+        task.spawn(HardDragOn)
+    end
+end)
