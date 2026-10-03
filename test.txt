@@ -19,6 +19,19 @@ function HardDrag.Off()
         for i, name in pairs({"click", "clickEnded", "rotate", "holdDistanceChanged"}) do
             pcall(restorefunction, env[name])
         end
+        local Dragger = env.initializeDrag and debug.getupvalue(env.initializeDrag, 4)
+        local BP = Dragger and Dragger:FindFirstChildOfClass("BodyPosition")
+        local BG = env.click and debug.getupvalue(env.click, 8)
+        if BP then
+            BP.P = 10000
+            BP.D = 800
+            BP.MaxForce = Vector3.new(17000, 17000, 17000)
+        end
+        if typeof(BG) == "Instance" then
+            BG.MaxTorque = Vector3.new(200, 200, 200)
+            BG.P = 1200
+            BG.D = 140
+        end
     end
 end
 
