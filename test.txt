@@ -76,6 +76,12 @@ function HardDrag.On()
 
         local item = GetItem(part) or part.Parent
         local lastSend = 0
+        local standTime = 0
+        local feet = {
+            CFrame.new(0.7, -1.8, 0), CFrame.new(0.35, -1.8, 0), CFrame.new(0, -1.8, 0), CFrame.new(-0.35, -1.8, 0), CFrame.new(-0.7, -1.8, 0),
+            CFrame.new(0.35, -1.8, 0.6), CFrame.new(0, -1.8, 0.6), CFrame.new(-0.35, -1.8, 0.6),
+            CFrame.new(0.35, -1.8, -0.6), CFrame.new(0, -1.8, -0.6), CFrame.new(-0.35, -1.8, -0.6),
+        }
         while DragAlive and holding and env.canDrag(part) and Dragger.Parent do
             local head = char:FindFirstChild("Head")
             if not head then break end
@@ -108,6 +114,20 @@ function HardDrag.On()
 
             BP.Position = target
             BG.CFrame = CFrame.new(Dragger.Position, Camera.CFrame.Position) * rotation
+
+            local root = char:FindFirstChild("HumanoidRootPart")
+            local standing = false
+            if root then
+                for i, off in pairs(feet) do
+                    local hit = workspace:FindPartOnRayWithIgnoreList(Ray.new((root.CFrame * off).Position, Vector3.new(0, -2.8, 0)), {char})
+                    if hit and (GetItem(hit) == item or hit == part or table.find(hit:GetConnectedParts(true), part)) then
+                        standing = true
+                        break
+                    end
+                end
+            end
+            standTime = standing and standTime + 0.05 or 0
+            if standTime > 1.2 then break end
 
             if tick() - lastSend > 0.25 then
                 lastSend = tick()
