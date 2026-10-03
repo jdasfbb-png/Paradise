@@ -5,6 +5,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local HardDrag = {}
 HardDrag.Distance = 7
+HardDrag.Noclip = false
 local DragConns = {}
 local DragAlive = false
 
@@ -88,7 +89,7 @@ function HardDrag.On()
             if not head then break end
             local target = head.Position + (Mouse.Hit.Position - head.Position).Unit * HardDrag.Distance
             local hitPart, hitPos = workspace:FindPartOnRayWithIgnoreList(Ray.new(head.Position, target - head.Position), {char, Dragger, part.Parent})
-            if hitPart then target = hitPos end
+            if hitPart and not HardDrag.Noclip then target = hitPos end
             if (Camera.CFrame.Position - head.Position).Magnitude > 2 then
                 target = target + Vector3.new(0, 1.8, 0)
             end
