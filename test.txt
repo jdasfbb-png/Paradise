@@ -1,7 +1,13 @@
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local HardDrag = {}
 local DragConns = {}
 local DragAlive = false
 
-local function HardDragOff()
+function HardDrag.Off()
     DragAlive = false
     for i, c in pairs(DragConns) do c:Disconnect() end
     DragConns = {}
@@ -14,9 +20,10 @@ local function HardDragOff()
     end
 end
 
-local function HardDragOn()
-    HardDragOff()
-    local OrigScript = Players.LocalPlayer.PlayerGui:WaitForChild("ItemDraggingGUI"):WaitForChild("Dragger")
+function HardDrag.On()
+    HardDrag.Off()
+    local LocalPlayer = Players.LocalPlayer
+    local OrigScript = LocalPlayer.PlayerGui:WaitForChild("ItemDraggingGUI"):WaitForChild("Dragger")
     local env
     repeat
         task.wait()
@@ -24,10 +31,10 @@ local function HardDragOn()
     until env and env.initializeDrag and env.click
     DragAlive = true
 
-    local Mouse = Players.LocalPlayer:GetMouse()
+    local Mouse = LocalPlayer:GetMouse()
     local Camera = workspace.CurrentCamera
-    local GetItem = require(game:GetService("ReplicatedStorage").Util.GetItem)
-    local ClientIsDragging = game:GetService("ReplicatedStorage").Interaction.ClientIsDragging
+    local GetItem = require(ReplicatedStorage.Util.GetItem)
+    local ClientIsDragging = ReplicatedStorage.Interaction.ClientIsDragging
     local Dragger = debug.getupvalue(env.initializeDrag, 4)
     local Track = debug.getupvalue(env.click, 4)
     local BP = Dragger:FindFirstChildOfClass("BodyPosition")
@@ -57,32 +64,79 @@ local function HardDragOn()
     }
 
     local function drag()
-        -- тело drag() из drag test.lua без изменений,
-        -- только `alive` заменён на `DragAlive`
+        local part = Mouse.Target
+        local char = LocalPlayer.Character
+        if dragging or not char or not char:FindFirstChild("Head") or not env.canDrag(part) then return end
+        if (Mouse.Hit.Position - char.Head.Position).Magnitude > 11 then return end
+
+        dragging = true
+        rotation = CFrame.new()
+        env.initializeDrag(part, Mouse.Hit.Position)
+        if Track then Track:Play(0.1, 1, 1) end
+
+        local item = GetItem(part) or part.Parent
+        local lastSend = 0
+        while DragAlive and holding and env.canDrag(part) and Dragger.Parent do
+            local head = char:FindFirstChild("Head")
+            if not head then break end
+            local target = head.Position + (Mouse.Hit.Position - head.Position).Unit * 7
+            local hitPart, hitPos = workspace:FindPartOnRayWithIgnoreList(Ray.new(head.Position, target - head.Position), {char, Dragger, part.Parent})
+            if hitPart then target = hitPos end
+            if (Camera.CFrame.Position - head.Position).Magnitude > 2 then
+                target = target + Vector3.new(0, 1.8, 0)
+            end
+
+            local hum = char:FindFirstChildOfClass("Humanoid")
+            local rotating = false
+            if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then
+                for key, rot in pairs(keys) do
+                    if UserInputService:IsKeyDown(key) then
+                        rotation = rot * rotation
+                        rotating = true
+                    end
+                end
+            end
+            if hum then
+                if rotating and hum.WalkSpeed > 0 then
+                    savedSpeed = hum.WalkSpeed
+                    hum.WalkSpeed = 0
+                elseif not rotating and savedSpeed then
+                    hum.WalkSpeed = savedSpeed
+                    savedSpeed = nil
+                end
+            end
+
+            BP.Position = target
+            BG.CFrame = CFrame.new(Dragger.Position, Camera.CFrame.Position) * rotation
+
+            if tick() - lastSend > 0.25 then
+                lastSend = tick()
+                ClientIsDragging:FireServer(item)
+            end
+            RunService.Stepped:Wait()
+        end
+
+        local hum = char:FindFirstChildOfClass("Humanoid")
+        if hum and savedSpeed then
+            hum.WalkSpeed = savedSpeed
+            savedSpeed = nil
+        end
+        if Track then Track:Stop() end
+        env.endDrag()
+        dragging = false
     end
 
-    table.insert(DragConns, services.UserInputService.InputBegan:Connect(function(input, gpe)
+    table.insert(DragConns, UserInputService.InputBegan:Connect(function(input, gpe)
         if not gpe and input.UserInputType == Enum.UserInputType.MouseButton1 then
             holding = true
             task.spawn(drag)
         end
     end))
-    table.insert(DragConns, services.UserInputService.InputEnded:Connect(function(input)
+    table.insert(DragConns, UserInputService.InputEnded:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 then
             holding = false
         end
     end))
 end
 
-PMisc:Toggle("Hard Dragger", "HardDragger", autoload.players.HardDragger, function(v)
-    autoload.players.HardDragger = v
-    save()
-    if v then task.spawn(HardDragOn) else HardDragOff() end
-end)
-
-Players.LocalPlayer.CharacterAdded:Connect(function()
-    if autoload.players.HardDragger then
-        task.wait(1)
-        task.spawn(HardDragOn)
-    end
-end)
+return HardDrag
