@@ -11,12 +11,12 @@ local DragAlive = false
 
 function HardDrag.Off()
     DragAlive = false
-    for i, c in pairs(DragConns) do c:Disconnect() end
+    for i, c in DragConns do c:Disconnect() end
     DragConns = {}
     local gui = Players.LocalPlayer.PlayerGui:FindFirstChild("ItemDraggingGUI")
     local env = gui and gui:FindFirstChild("Dragger") and getsenv(gui.Dragger)
     if env then
-        for i, name in pairs({"click", "clickEnded", "rotate", "holdDistanceChanged"}) do
+        for i, name in {"click", "clickEnded", "rotate", "holdDistanceChanged"} do
             pcall(restorefunction, env[name])
         end
         local Dragger = env.initializeDrag and debug.getupvalue(env.initializeDrag, 4)
@@ -55,7 +55,7 @@ function HardDrag.On()
     local BP = Dragger:FindFirstChildOfClass("BodyPosition")
     local BG = debug.getupvalue(env.click, 8)
 
-    for i, name in pairs({"click", "clickEnded", "rotate", "holdDistanceChanged"}) do
+    for i, name in {"click", "clickEnded", "rotate", "holdDistanceChanged"} do
         hookfunction(env[name], function() end)
     end
     env.endDrag()
@@ -104,7 +104,7 @@ function HardDrag.On()
             local hum = char:FindFirstChildOfClass("Humanoid")
             local rotating = false
             if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then
-                for key, rot in pairs(keys) do
+                for key, rot in keys do
                     if UserInputService:IsKeyDown(key) then
                         rotation = rot * rotation
                         rotating = true
