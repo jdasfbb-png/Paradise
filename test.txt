@@ -4,7 +4,7 @@ local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local HardDrag = {}
-HardDrag.Distance = 20
+HardDrag.Distance = 8
 HardDrag.Noclip = false
 local DragConns = {}
 local DragAlive = false
@@ -81,22 +81,17 @@ function HardDrag.On()
     local function drag()
         local part = Mouse.Target
         local char = LocalPlayer.Character
-        if dragging or not char or not char:FindFirstChild("Head") then return end
-        if not part or not part:IsA("BasePart") or part.Anchored or part:IsDescendantOf(char) then return end
-        for i, v in part:GetConnectedParts() do
-            if v.Name == "HumanoidRootPart" then return end
-        end
-        if (Mouse.Hit.Position - char.Head.Position).Magnitude > HardDrag.Distance + 4 then return end
+        if dragging or not char or not char:FindFirstChild("Head") or not env.canDrag(part) then return end
+        if (Mouse.Hit.Position - char.Head.Position).Magnitude > 25 then return end
 
         dragging = true
         rotation = CFrame.new()
-        BG.Parent = Dragger
         env.initializeDrag(part, Mouse.Hit.Position)
         if Track then Track:Play(0.1, 1, 1) end
 
         local item = GetItem(part) or part.Parent
         local lastSend = 0
-        while DragAlive and holding and part.Parent and not part.Anchored and Dragger.Parent do
+        while DragAlive and holding and env.canDrag(part) and Dragger.Parent do
             local head = char:FindFirstChild("Head")
             if not head then break end
             local target = head.Position + (Mouse.Hit.Position - head.Position).Unit * HardDrag.Distance
