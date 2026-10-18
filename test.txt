@@ -49,6 +49,7 @@ function HardDrag.On()
     local Mouse = LocalPlayer:GetMouse()
     local Camera = workspace.CurrentCamera
     local GetItem = require(ReplicatedStorage.Util.GetItem)
+    local InteractionPermission = require(ReplicatedStorage.Interaction.InteractionPermission)
     local ClientIsDragging = ReplicatedStorage.Interaction.ClientIsDragging
     local Dragger = debug.getupvalue(env.initializeDrag, 4)
     local Track = debug.getupvalue(env.click, 4)
@@ -81,17 +82,24 @@ function HardDrag.On()
     local function drag()
         local part = Mouse.Target
         local char = LocalPlayer.Character
-        if dragging or not char or not char:FindFirstChild("Head") or not env.canDrag(part) then return end
+        if dragging or not char or not char:FindFirstChild("Head") or not part or not part:IsA("BasePart") then return end
+        if char:FindFirstChildOfClass("Tool") or part.Name == "LeafPart" then return end
+        for i, v in part:GetConnectedParts() do
+            if v.Name == "HumanoidRootPart" then return end
+        end
+        local item = GetItem(part) or part.Parent
+        if Players:GetPlayerFromCharacter(item) then return end
+        if item:FindFirstChild("Owner") and not InteractionPermission:UserCanInteract(LocalPlayer, item, "Grab") then return end
         if (Mouse.Hit.Position - char.Head.Position).Magnitude > 25 then return end
 
         dragging = true
         rotation = CFrame.new()
+        BG.Parent = Dragger
         env.initializeDrag(part, Mouse.Hit.Position)
         if Track then Track:Play(0.1, 1, 1) end
 
-        local item = GetItem(part) or part.Parent
         local lastSend = 0
-        while DragAlive and holding and env.canDrag(part) and Dragger.Parent do
+        while DragAlive and holding and part.Parent and Dragger.Parent do
             local head = char:FindFirstChild("Head")
             if not head then break end
             local target = head.Position + (Mouse.Hit.Position - head.Position).Unit * HardDrag.Distance
